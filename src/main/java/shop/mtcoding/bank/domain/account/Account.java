@@ -1,4 +1,4 @@
-package shop.mtcoding.domain.user;
+package shop.mtcoding.bank.domain.account;
 
 import java.time.LocalDateTime;
 
@@ -9,42 +9,42 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import shop.mtcoding.bank.domain.user.User;
+
 @NoArgsConstructor // 스프링이 User 객체 생성할 때 빈생성자로 new를 하기 때문!!
 @Getter
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "user_tb")
+@Table(name = "account_tb")
 @Entity
-public class User { // extends 시간설정 (상속) -> JUnit 테스트할때 불편하니까 나중에 추가
+public class Account {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(unique = true, nullable = false, length = 20)
-    private String username;
+    private Long number; // 계좌번호
 
-    @Column(nullable = false, length = 60) // 패스워드 인코딩(BCrypt)
-    private String password;
+    @Column(nullable = false, length = 4)
+    private Long password; // 계좌비번
 
-    @Column(nullable = false, length = 20)
-    private String email;
+    @Column(unique = true, nullable = false)
+    private Long balance; // 잔액(기본값 1000원)
 
-    @Column(nullable = false, length = 20)
-    private String fullname;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserEnum role; // ADMIN, CUSTOMER
+    // 항상 ORM에서 fk의 주인은 Many Entity 쪽이다.
+    // 한명의 유저는 많은 계좌를 가질 수 있다.
+    @ManyToOne(fetch = FetchType.LAZY) // account.getUser().아무필드호출() == Lazy 발동
+    private User user; // user_id
 
     @CreatedDate // Insert
     @Column(nullable = false)
@@ -52,20 +52,18 @@ public class User { // extends 시간설정 (상속) -> JUnit 테스트할때 �
 
     @LastModifiedDate // Insert, Update
     @Column(nullable = false)
-    private LocalDateTime updateAt;
+    private LocalDateTime updatedAt;
 
-    // 빌더
     @Builder
-    public User(Long id, String username, String password, String email, String fullname, UserEnum role,
-            LocalDateTime createdAt, LocalDateTime updateAt) {
+    public Account(Long id, Long number, Long password, Long balance, User user, LocalDateTime createdAt,
+            LocalDateTime updatedAt) {
         this.id = id;
-        this.username = username;
+        this.number = number;
         this.password = password;
-        this.email = email;
-        this.fullname = fullname;
-        this.role = role;
+        this.balance = balance;
+        this.user = user;
         this.createdAt = createdAt;
-        this.updateAt = updateAt;
+        this.updatedAt = updatedAt;
     }
 
 }
