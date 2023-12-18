@@ -34,21 +34,23 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         log.debug("디버그 : filterChain 빈 등록됨");
-        http.headers().frameOptions().sameOrigin(); // iframe 허용안함.
-        http.csrf().disable(); // enable이면 post맨 작동안함 (메타코딩 유튜브에 시큐리티 강의)
-        http.cors().configurationSource(configurationSource());
-
-        // jSessionId를 서버쪽에서 관리안하겠다는 뜻!!
-        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        // react, 앱으로 요청할 예정
-        http.formLogin().disable();
-        // httpBasic은 브라우저가 팝업창을 이용해서 사용자 인증을 진행한다.
-        http.httpBasic().disable();
-
-        http.authorizeRequests()
-                .antMatchers("/api/s/**").authenticated()
-                .antMatchers("/api/admin/**").hasRole("" + UserEnum.ADMIN) // 최근 공식문서에서는 ROLE_ 안붙여도 됨
-                .anyRequest().permitAll();
+        http
+                // iframe 허용안함.
+                .headers((header) -> header.frameOptions(
+                        HeadersConfigurer.FrameOptionsConfig::sameOrigin))
+                // enable이면 post맨 작동안함
+                .csrf(AbstractHttpConfigurer::disable)
+                // jSessionId를 서버쪽에서 관리안하겠다는 뜻!!
+                .cors(corsConfigurer -> corsConfigurer.configurationSource(configurationSource()))
+                .sessionManagement(
+                        (sessionManagement) -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .formLogin((f) -> f.disable())
+                .httpBasic((h) -> h.disable())
+                .authorizeHttpRequests(authenticated -> authenticated.requestMatchers("/api/s/**").authenticated())
+                .authorizeHttpRequests(registry -> registry.requestMatchers("/api/admin/**")
+                        .hasRole("" + UserEnum.ADMIN)
+                        .anyRequest()
+                        .permitAll());
 
         return http.build();
     }
